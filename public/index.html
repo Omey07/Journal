@@ -32,9 +32,9 @@ const TAG_PRESETS=["A+ Setup","B Setup","News Event","Revenge","Overtraded","Ear
 // API helpers
 const api={
   getTrades:async()=>{const r=await fetch('/api/trades');return r.json()},
-  saveTrades:async(t)=>{await fetch('/api/trades',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(t)})},
+  saveTrades:async(t)=>{const r=await fetch('/api/trades',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(t)});const j=await r.json();if(!r.ok||j.error)throw new Error(j.error||'Save failed')},
   getDaily:async()=>{const r=await fetch('/api/daily');return r.json()},
-  saveDaily:async(d)=>{await fetch('/api/daily',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})},
+  saveDaily:async(d)=>{const r=await fetch('/api/daily',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});const j=await r.json();if(!r.ok||j.error)throw new Error(j.error||'Save failed')},
   exportAll:async()=>{const r=await fetch('/api/export');return r.json()},
   importAll:async(data)=>{const r=await fetch('/api/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return r.json()},
 };
@@ -72,8 +72,8 @@ function App(){
 
   useEffect(()=>{(async()=>{try{const[t,d]=await Promise.all([api.getTrades(),api.getDaily()]);setTrades(t);setDailyEntries(d)}catch(e){console.error(e)}setLoading(false)})()},[]);
 
-  const saveTrades=useCallback(async(t)=>{setTrades(t);await api.saveTrades(t)},[]);
-  const saveDaily=useCallback(async(d)=>{setDailyEntries(d);await api.saveDaily(d)},[]);
+  const saveTrades=useCallback(async(t)=>{setTrades(t);try{await api.saveTrades(t);showSyncMsg("✓ Saved");}catch(e){showSyncMsg("❌ Save failed — check connection");console.error(e);}},[]);
+  const saveDaily=useCallback(async(d)=>{setDailyEntries(d);try{await api.saveDaily(d);showSyncMsg("✓ Saved");}catch(e){showSyncMsg("❌ Save failed — check connection");console.error(e);}},[]);
 
   const handleScreenshot=(e)=>{const files=Array.from(e.target.files||[]);if(!files.length)return;const cur=(form.screenshots||[]).length;if(cur+files.length>10){alert("Maximum 10 screenshots per trade");return}files.forEach(file=>{if(file.size>4*1024*1024){alert(file.name+" is over 4MB, skipped");return}const reader=new FileReader();reader.onload=(ev)=>setForm(f=>({...f,screenshots:[...(f.screenshots||[]),ev.target.result]}));reader.readAsDataURL(file)});e.target.value=""};
 
